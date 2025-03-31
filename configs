@@ -1,0 +1,35 @@
+# Create directories and files in Kaggle notebook
+import os
+import json
+
+os.makedirs('/kaggle/working/configs/reside-in', exist_ok=True)
+
+# base.json
+base_config = {
+    "epochs": 100,
+    "warmup_epochs": 5,
+    "const_epochs": 10,
+    "frozen_epochs": 10,
+    "eval_freq": 5,
+    "weight_decay": 0.01,
+    "t_patch_size": 256,
+    "v_patch_size": 256,
+    "edge_decay": 0,
+    "data_augment": True,
+    "cache_memory": False,
+    "num_iter": 1000,
+    "v_batch_ratio": 0.5,
+    "valid_mode": "valid"
+}
+
+with open('/kaggle/working/configs/reside-in/base.json', 'w') as f:
+    json.dump(base_config, f)
+
+# model_t.json
+model_config = {
+    "batch_size": 16,
+    "lr": 0.0002
+}
+
+with open('/kaggle/working/configs/reside-in/model_t.json', 'w') as f:
+    json.dump(model_config, f)
