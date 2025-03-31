@@ -1,4 +1,3 @@
-# datasets.py (updated)
 import os
 import torch
 from torch.utils.data import Dataset
@@ -18,7 +17,6 @@ class PairLoader(Dataset):
         self.clear_dir = os.path.join(data_dir, 'GT')
         self.image_list = sorted(os.listdir(self.hazy_dir))
 
-        # Transform to normalize and resize images
         self.transform = transforms.Compose([
             transforms.Resize((patch_size, patch_size)),  # Resize to fixed patch_size
             transforms.ToTensor(),
@@ -35,7 +33,6 @@ class PairLoader(Dataset):
         hazy_img = Image.open(hazy_path).convert('RGB')
         clear_img = Image.open(clear_path).convert('RGB')
 
-        # Apply the transform (which includes resizing)
         hazy_img = self.transform(hazy_img)
         clear_img = self.transform(clear_img)
 
