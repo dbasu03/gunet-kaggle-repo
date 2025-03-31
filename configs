@@ -1,10 +1,9 @@
-# Create directories and files in Kaggle notebook
+
 import os
 import json
 
 os.makedirs('/kaggle/working/configs/reside-in', exist_ok=True)
 
-# base.json
 base_config = {
     "epochs": 100,
     "warmup_epochs": 5,
@@ -25,7 +24,6 @@ base_config = {
 with open('/kaggle/working/configs/reside-in/base.json', 'w') as f:
     json.dump(base_config, f)
 
-# model_t.json
 model_config = {
     "batch_size": 16,
     "lr": 0.0002
