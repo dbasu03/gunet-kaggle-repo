@@ -1,19 +1,18 @@
-# train.py (updated)
+
 import os
 import json
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.amp import autocast, GradScaler  # Updated imports for autocast and GradScaler
+from torch.amp import autocast, GradScaler
 from torch.utils.data import DataLoader, RandomSampler
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 
-# Training config
 args = {
     'model': 'gunet_t',
-    'num_workers': 4,  # Kaggle has limited CPU cores
+    'num_workers': 0,  # Set to 0 to avoid multiprocessing issues in Kaggle
     'use_mp': True,  # Use mixed precision for faster training
     'use_ddp': False,  # Disable DDP in Kaggle
     'save_dir': '/kaggle/working/saved_models/',
@@ -42,7 +41,7 @@ def train(train_loader, network, criterion, optimizer, scaler, frozen_bn=False):
         source_img = batch['source'].cuda()
         target_img = batch['target'].cuda()
 
-        with autocast('cuda', enabled=args['use_mp']):  # Updated autocast
+        with autocast('cuda', enabled=args['use_mp']):
             output = network(source_img)
             loss = criterion(output, target_img)
 
@@ -77,21 +76,17 @@ def valid(val_loader, network):
     return PSNR.avg
 
 def main():
-    # Define network
     network = gunet_t()
     network.cuda()
 
-    # Define loss function
     criterion = nn.L1Loss()
 
-    # Define optimizer
     optimizer = torch.optim.AdamW(network.parameters(), lr=m_setup['lr'], weight_decay=b_setup['weight_decay'])
     lr_scheduler = CosineScheduler(optimizer, param_name='lr', t_max=b_setup['epochs'], value_min=m_setup['lr'] * 1e-2,
                                    warmup_t=b_setup['warmup_epochs'], const_t=b_setup['const_epochs'])
     wd_scheduler = CosineScheduler(optimizer, param_name='weight_decay', t_max=b_setup['epochs'])
-    scaler = GradScaler('cuda')  # Already updated in previous fix
+    scaler = GradScaler('cuda')
 
-    # Load saved model
     save_dir = os.path.join(args['save_dir'], args['exp'])
     os.makedirs(save_dir, exist_ok=True)
     if not os.path.exists(os.path.join(save_dir, args['model'] + '.pth')):
@@ -108,7 +103,6 @@ def main():
         cur_epoch = model_info['cur_epoch']
         best_psnr = model_info['best_psnr']
 
-    # Define dataset
     train_dataset = PairLoader(os.path.join(args['data_dir'], args['train_set']), 'train',
                                b_setup['t_patch_size'],
                                b_setup['edge_decay'],
@@ -117,7 +111,7 @@ def main():
     train_loader = DataLoader(train_dataset,
                               batch_size=m_setup['batch_size'],
                               sampler=RandomSampler(train_dataset, num_samples=b_setup['num_iter']),
-                              num_workers=args['num_workers'],
+                              num_workers=args['num_workers'],  # Now 0
                               pin_memory=True,
                               drop_last=True)
 
@@ -125,10 +119,9 @@ def main():
                              b_setup['v_patch_size'])
     val_loader = DataLoader(val_dataset,
                             batch_size=max(int(m_setup['batch_size'] * b_setup['v_batch_ratio']), 1),
-                            num_workers=args['num_workers'],
+                            num_workers=args['num_workers'],  # Now 0
                             pin_memory=True)
 
-    # Start training
     print('==> Start training, current model name: ' + args['model'])
     writer = SummaryWriter(log_dir=os.path.join(args['log_dir'], args['exp'], args['model']))
 
